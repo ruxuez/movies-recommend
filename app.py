@@ -89,7 +89,7 @@ def generate_response(prompt):
     if function == 'match_category':     
         result_by_text = images_styles.where(
         lambda t: (t["mastercategory"] == CATEGORY) & (t["subcategory"] == SUB_CATEGORY) & (t["articletype"] == TYPE)
-        )[:1]
+        )[:100]
         for row in result_by_text:
             response = requests.get(row["link"])
             img = Image.open(BytesIO(response.content))
@@ -101,11 +101,14 @@ def generate_response(prompt):
             cosine_distance=lambda t: cosine_distance(
                 t["image_embedding"], vector(target_by_text)
                 )
-            ).order_by("cosine_distance")[:1]
+            ).order_by("cosine_distance")[:100]
+        images = []
         for row in result_by_text:
             response = requests.get(row["link"])
             img = Image.open(BytesIO(response.content))
-        response = st.image(img)
+            images.append(img)
+        st.image(images, width=100)
+
     else:
         response = requests.get(prompt)
         img_search = Image.open(BytesIO(response.content))
@@ -115,7 +118,7 @@ def generate_response(prompt):
             cosine_distance=lambda t: cosine_distance(
                 t["image_embedding"], vector(target_by_image)
                 )
-            ).order_by("cosine_distance")[:1]
+            ).order_by("cosine_distance")[:100]
         for row in result_by_image:
             response = requests.get(row["link"])
             img = Image.open(BytesIO(response.content))
