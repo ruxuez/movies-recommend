@@ -21,7 +21,7 @@ cosine_distance = gp.operator("<=>")
 
 vector = gp.type_("vector", modifier=512)
 
-fashion_images = db.create_dataframe(table_name="image_embeddings", schema="fashion")
+fashion_images = db.create_dataframe(table_name="product_embeddings", schema="fashion")
 images_styles = db.create_dataframe(table_name="image_styles", schema="fashion")
 
 GENDER = ("NoSpecified", "Women", "Men", "Girls", "Boys", "Unisex")
@@ -268,7 +268,7 @@ def main():
     masterCategory = c1.selectbox('Product Main Category:', options=MASTERCATEGORY, key="mastercat")
     subCategory = c1.selectbox('Product Sub-Category:', options=SUBCATEGORY[masterCategory], key="subcat")
     articleType = c1.selectbox('Product Type:', options=ARTICLETTYPE[subCategory], key="type")
-    baseColour = c1.selectbox('Product Type:', options=BASECOLOUR, key="colour")
+    baseColour = c1.selectbox('Product Colour:', options=BASECOLOUR, key="colour")
     season = c1.selectbox('Product Season:', options=SEASON, key="season")
     year=c1.text_input("Product Year", value="From 2007 to 2019", key="year")
     usage = c1.selectbox('Product Usage:', options=USAGE, key="usage")
@@ -278,7 +278,8 @@ def main():
         c2.subheader("Results")
         result = images_styles.where(
         lambda t: (
-            (t["mastercategory"] == masterCategory) 
+            (t["gender"] == gender)
+            & (t["mastercategory"] == masterCategory) 
             & (t["subcategory"] == subCategory) 
             & (t["articletype"] == articleType) 
             & (t["basecolour"] == baseColour) 
@@ -286,13 +287,15 @@ def main():
             & (t["year"] == year) 
             & (t["usage"] == usage) 
         )
-        )[:100]    
+        )[:20]    
         images = []
+        captions = []
         for row in result:
             response = requests.get(row["link"])
             img = Image.open(BytesIO(response.content))
             images.append(img)
-        c2.image(images, width=100)
+            captions.append(row["productdisplayname"])
+        c2.image(images, width=200, caption=captions)
 
 
 if __name__ == "__main__":

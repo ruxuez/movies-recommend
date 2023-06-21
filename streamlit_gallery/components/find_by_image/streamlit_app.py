@@ -25,7 +25,7 @@ cosine_distance = gp.operator("<=>")
 
 vector = gp.type_("vector", modifier=512)
 
-fashion_images = db.create_dataframe(table_name="image_embeddings", schema="fashion")
+fashion_images = db.create_dataframe(table_name="product_embeddings", schema="fashion")
 images_styles = db.create_dataframe(table_name="image_styles", schema="fashion")
 
 
@@ -47,14 +47,16 @@ def main():
             cosine_distance=lambda t: cosine_distance(
                 t["image_embedding"], vector(target_by_image)
                 )
-            ).order_by("cosine_distance")[:100]
+            ).order_by("cosine_distance")[:20]
         print(len(list(result_by_text)))
         images = []
+        captions = []
         for row in result_by_text:
             response = requests.get(row["link"])
             img = Image.open(BytesIO(response.content))
             images.append(img)
-        st.image(images, width=100)
+            captions.append(row["productdisplayname"])
+        st.image(images, width=200, caption=captions)
 
 
 if __name__ == "__main__":
