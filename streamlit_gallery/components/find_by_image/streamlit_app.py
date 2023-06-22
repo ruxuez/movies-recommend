@@ -1,11 +1,6 @@
 import streamlit as st
 
-from streamlit_gallery.utils.db_helper import (
-    cosine_distance,
-    vector,
-    fashion_images,
-    get_image_from_url,
-)
+from streamlit_gallery.utils.db_helper import get_image_from_url
 from sentence_transformers import SentenceTransformer, util
 
 from multiprocessing import Pool
@@ -33,7 +28,6 @@ cosine_distance = gp.operator("<=>")
 vector = gp.type_("vector", modifier=512)
 
 fashion_images = db.create_dataframe(table_name="product_embeddings", schema="fashion")
-images_styles = db.create_dataframe(table_name="image_styles", schema="fashion")
 
 # First, we load the respective CLIP model
 model = SentenceTransformer("clip-ViT-B-32")

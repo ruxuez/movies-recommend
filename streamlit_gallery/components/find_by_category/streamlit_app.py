@@ -5,6 +5,27 @@ import requests
 from PIL import Image
 from io import BytesIO
 
+import greenplumpython as gp
+
+db = gp.database(
+    params={
+        "host": st.secrets["db_hostname"],
+        "dbname": st.secrets["db_name"],
+        "user": st.secrets["db_username"],
+        "port": st.secrets["db_port"],
+        "password": st.secrets["db_password"],
+    }
+)
+
+gp.config.print_sql = True
+
+# Get repr of Grenplum operator vector cosine distance
+cosine_distance = gp.operator("<=>")
+
+vector = gp.type_("vector", modifier=512)
+
+images_styles = db.create_dataframe(table_name="image_styles", schema="fashion")
+
 
 # Define Sliders Contents
 GENDER = ("Not Specified", "Women", "Men", "Girls", "Boys", "Unisex")
