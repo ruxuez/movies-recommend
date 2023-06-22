@@ -13,3 +13,7 @@ streamlit-quill
 # Dependencies
 pandas-profiling
 requests
+greenplum-python
+sentence_transformers
+PIL
+numpy
