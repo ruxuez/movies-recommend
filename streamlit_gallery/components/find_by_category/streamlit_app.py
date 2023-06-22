@@ -11,7 +11,15 @@ from io import BytesIO
 
 import numpy as np
 
-db = gp.database(uri="postgres://gpadmin:changeme@35.225.47.84:5432/warehouse")
+db = gp.database(
+        params={
+            "host": st.secrets['db_hostname'],
+            "dbname": st.secrets['db_name'],
+            "user": st.secrets['db_username'],
+            "port": st.secrets['db_port'],
+            "password": st.secrets['db_password'],
+        }
+)
 
 gp.config.print_sql = True
 
