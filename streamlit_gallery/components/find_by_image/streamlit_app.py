@@ -7,6 +7,7 @@ from multiprocessing import Pool
 from PIL import Image
 import requests
 from io import BytesIO
+import os
 
 import greenplumpython as gp
 
@@ -19,6 +20,8 @@ db = gp.database(
         "password": st.secrets["db_password"],
     }
 )
+
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 gp.config.print_sql = True
 

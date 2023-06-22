@@ -4,9 +4,7 @@ from streamlit_gallery.utils.db_helper import get_image_from_url
 from sentence_transformers import SentenceTransformer, util
 
 from multiprocessing import Pool
-from PIL import Image
-import requests
-from io import BytesIO
+import os
 
 import greenplumpython as gp
 
@@ -19,6 +17,8 @@ db = gp.database(
         "password": st.secrets["db_password"],
     }
 )
+
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 gp.config.print_sql = True
 
@@ -60,7 +60,7 @@ def main():
             f"**{len(list(result_by_text))} Products Found**: ... Printing images..."
         )
         captions = [row["productdisplayname"] for row in result_by_text]
-        pool = Pool(8)
+        pool = Pool(4)
         images = pool.map(get_image_from_url, [row["link"] for row in result_by_text])
         st.image(images, width=200, caption=captions)
         data_load_state.markdown(f"**{len(list(result_by_text))} Products Found**")

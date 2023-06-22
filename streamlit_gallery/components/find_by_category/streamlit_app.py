@@ -1,9 +1,9 @@
 import streamlit as st
-from streamlit_gallery.utils.db_helper import images_styles
 from multiprocessing import Pool
 import requests
 from PIL import Image
 from io import BytesIO
+import os
 
 import greenplumpython as gp
 
@@ -16,6 +16,8 @@ db = gp.database(
         "password": st.secrets["db_password"],
     }
 )
+
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 gp.config.print_sql = True
 
