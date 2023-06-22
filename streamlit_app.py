@@ -16,6 +16,8 @@ def main():
             page.item("Find by Category", components.find_by_category)
             page.item("Find by Text", components.find_by_text)
             page.item("Find by Image👛", components.find_by_image)
+    
+    st.markdown("This demo built by **VMware Data**, uses the open source **pgvector** extension of Postgres in the **VMware Greenplum** Data Warehouse to show how unstructured data, such as images and text, can be used to build powerful search engines.")
 
     page.show()
 

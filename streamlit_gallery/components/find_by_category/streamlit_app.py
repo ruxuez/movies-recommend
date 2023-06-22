@@ -1,7 +1,6 @@
 import streamlit as st
 
-from streamlit_ace import st_ace, KEYBINDINGS, LANGUAGES, THEMES
-from streamlit_gallery.utils.readme import readme
+from multiprocessing import Pool
 
 import greenplumpython as gp
 import os
@@ -16,6 +15,8 @@ db = gp.database(uri="postgres://gpadmin:changeme@35.225.47.84:5432/warehouse")
 
 gp.config.print_sql = True
 
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
+
 # Get repr of Grenplum operator vector cosine distance
 cosine_distance = gp.operator("<=>") 
 
@@ -24,30 +25,31 @@ vector = gp.type_("vector", modifier=512)
 fashion_images = db.create_dataframe(table_name="product_embeddings", schema="fashion")
 images_styles = db.create_dataframe(table_name="image_styles", schema="fashion")
 
-GENDER = ("NoSpecified", "Women", "Men", "Girls", "Boys", "Unisex")
-MASTERCATEGORY = ("NoSpecified", "Free Items", "Apparel", "Sporting Goods", "Footwear", "Personal Care", "Accessories", "Home")
+GENDER = ("Not Specified", "Women", "Men", "Girls", "Boys", "Unisex")
+MASTERCATEGORY = ("Not Specified", "Free Items", "Apparel", "Sporting Goods", "Footwear", "Personal Care", "Accessories", "Home")
 SUBCATEGORY = {
-    "NoSpecified": ("NoSpecified", ""),
+    "Not Specified": ("Not Specified", ""),
     "Accessories": (
         "Accessories", "Bags", "Belts", "Cufflinks", "Eyewear", "Gloves", "Heaswear", "Jewellery", "Mufflers", "Perfumes", "Scarves",
-        "Shoe Accessories", "Socks", "Sports Accessories", "Stoles", "Ties", "Umbrellas", "Wallets", "Watches", "Water Bottle",
+        "Shoe Accessories", "Socks", "Sports Accessories", "Stoles", "Ties", "Umbrellas", "Wallets", "Watches", "Water Bottle", "Not Specified",
     ), 
     "Apparel": (
-        "Apparel Set", "Bottomwear", "Dress", "Innerwear", "Loungewear and Nightwear", "Saree", "Socks", "Topwear", 
+        "Apparel Set", "Bottomwear", "Dress", "Innerwear", "Loungewear and Nightwear", "Saree", "Socks", "Topwear", "Not Specified",
     ), 
-    "Footwear": ("Flip Flops", "Sandal", "Shoes"), 
-    "Free Items": ("Free Gifts", "Vouchers"), 
-    "Home": ("Home Furnishing", ""),
+    "Footwear": ("Flip Flops", "Sandal", "Shoes", "Not Specified"), 
+    "Free Items": ("Free Gifts", "Vouchers", "Not Specified"), 
+    "Home": ("Home Furnishing", "Not Specified"),
     "Personal Care": (
-        "Bath and Body", "Beauty Accessories", "Eyes", "Fragrance", "Hair", "Lips", "Makeup", "Nails", "Perfumes", "Skin", "Skin Care",
+        "Bath and Body", "Beauty Accessories", "Eyes", "Fragrance", "Hair", "Lips", "Makeup", "Nails", "Perfumes", "Skin", "Skin Care", "Not Specified",
     ),
-    "Sporting Goods": ("Sports Equipment", "Wristbands"),
+    "Sporting Goods": ("Sports Equipment", "Wristbands", "Not Specified"),
 }
 ARTICLETTYPE = {
-    "NoSpecified": ("NoSpecified", ""),
+    "Not Specified": ("Not Specified", "Not Specified"),
     "Accessories": (
-        "Accessory Gift Set", "Hair Accessory", "Key chain", "Messenger Bag", "Travel Accessory", "Water Bottle", "Clothing Set", "Kurta Sets", "Swimwear",
+        "Accessory Gift Set", "Hair Accessory", "Key chain", "Messenger Bag", "Travel Accessory", "Water Bottle", "Clothing Set", "Kurta Sets", "Swimwear", "Not Specified",
     ),
+    "Apparel Set": ("Clothing Set", "Kurta Sets", "Swimwear", "Not Specified"),
     "Bags": (
         'Backpacks',
         'Clutches',
@@ -61,10 +63,11 @@ ARTICLETTYPE = {
         'Travel Accessory',
         'Trolley Bag',
         'Waist Pouch',
-        'Wallets'
+        'Wallets',
+        "Not Specified",
     ),
     "Bath and Body": (
-        'Body Lotion', 'Body Wash and Scrub', 'Nail Essentials',
+        'Body Lotion', 'Body Wash and Scrub', 'Nail Essentials', "Not Specified",
     ),
     "Beauty Accessories": ("Beauty Accessories"),
     "Belts": ("Belts", "Tshirts"),
@@ -86,13 +89,14 @@ ARTICLETTYPE = {
         'Track Pants',
         'Tracksuits',
         'Trousers',
+        "Not Specified",
     ),
-    "Cufflinks": ("Cufflinks", "Ties and Cufflinks"),
-    "Dress": ("Dresses", "Jumpsuit"),
-    "Eyes": ('Eyeshadow', 'Kajal and Eyeliner', 'Mascara'),
-    "Eyewear": ("Sunglasses", ""),
-    "Flip Flops": ("Flip Flops", ""),
-    "Fragrance": ('Deodorant', 'Fragrance Gift Set', 'Perfume and Body Mist'),
+    "Cufflinks": ("Cufflinks", "Ties and Cufflinks", "Not Specified"),
+    "Dress": ("Dresses", "Jumpsuit", "Not Specified"),
+    "Eyes": ('Eyeshadow', 'Kajal and Eyeliner', 'Mascara', "Not Specified"),
+    "Eyewear": ("Sunglasses", "Not Specified"),
+    "Flip Flops": ("Flip Flops", "Not Specified"),
+    "Fragrance": ('Deodorant', 'Fragrance Gift Set', 'Perfume and Body Mist', "Not Specified"),
     "Free Gifts": (
         'Backpacks',
         'Clutches',
@@ -101,12 +105,13 @@ ARTICLETTYPE = {
         'Laptop Bag',
         'Scarves',
         'Ties',
-        'Wallets'
+        'Wallets',
+        "Not Specified",
     ),
-    "Gloves": ("Gloves", ""),
-    "Hair": ("Hair Colour", ""),
-    "Headwear": ('Caps', 'Hat', 'Headband'),
-    "Home Furnishing": ("Cushion Covers", ""),
+    "Gloves": ("Gloves", "Not Specified"),
+    "Hair": ("Hair Colour", "Not Specified"),
+    "Headwear": ('Caps', 'Hat', 'Headband', "Not Specified"),
+    "Home Furnishing": ("Cushion Covers", "Not Specified"),
     "Innerwear": (
         'Boxers',
         'Bra',
@@ -115,6 +120,7 @@ ARTICLETTYPE = {
         'Innerwear Vests',
         'Shapewear',
         'Trunk',
+        "Not Specified",
     ),
     "Jewellery": (
         'Bangle',
@@ -124,8 +130,9 @@ ARTICLETTYPE = {
         'Necklace and Chains',
         'Pendant',
         'Ring',
+        "Not Specified",
     ),
-    "Lips": ('Lip Care', 'Lip Gloss', 'Lip Liner', 'Lip Plumper', 'Lipstick'),
+    "Lips": ('Lip Care', 'Lip Gloss', 'Lip Liner', 'Lip Plumper', 'Lipstick', "Not Specified"),
     "Loungewear and Nightwear": (
         'Baby Dolls',
         'Bath Robe',
@@ -136,6 +143,7 @@ ARTICLETTYPE = {
         'Night suits',
         'Robe',
         'Shorts',
+        "Not Specified",
     ),
     "Makeup": (
         'Compact',
@@ -145,21 +153,22 @@ ARTICLETTYPE = {
         'Highlighter and Blush',
         'Kajal and Eyeliner',
         'Makeup Remover',
+        "Not Specified",
     ),
-    "Mufflers": ("Mufflers", ""),
-    "Nails": ("Nail Polish", ""),
-    "Perfumes": ("Perfume and Body Mist", ""), 
-    "Sandal": ("Flip Flops", "Sandals", "Sports Sandals"),
-    "Saree": ("Sarees", ""),
-    "Scarves": ("Scarves", ""),
+    "Mufflers": ("Mufflers", "Not Specified"),
+    "Nails": ("Nail Polish", "Not Specified"),
+    "Perfumes": ("Perfume and Body Mist", "Not Specified"), 
+    "Sandal": ("Flip Flops", "Sandals", "Sports Sandals", "Not Specified"),
+    "Saree": ("Sarees", "Not Specified"),
+    "Scarves": ("Scarves", "Not Specified"),
     "Shoe Accessories": (
-        "Shoe Accessories", "Shoe Laces"
+        "Shoe Accessories", "Shoe Laces", "Not Specified",
     ),
     "Shoes": (
-        'Casual Shoes', 'Flats', 'Formal Shoes', 'Heels', 'Sandals', 'Sports Shoes'
+        'Casual Shoes', 'Flats', 'Formal Shoes', 'Heels', 'Sandals', 'Sports Shoes', "Not Specified"
     ),
     "Skin": (
-        'Body Lotion', 'Face Moisturisers', 'Face Serum and Gel', 'Mask and Peel'
+        'Body Lotion', 'Face Moisturisers', 'Face Serum and Gel', 'Mask and Peel', "Not Specified"
     ),
     "Skin Care": (
         'Eye Cream',
@@ -170,12 +179,13 @@ ARTICLETTYPE = {
         'Mens Grooming Kit',
         'Sunscreen',
         'Toner',
+        "Not Specified",
     ),
-    "Socks": ("Booties", "Socks"),
-    "Sports Accessories": ("Wristbands"),
-    "Sports Equipment": ("Basketballs", "Footballs"),
-    "Stoles": ("Stoles", ""),
-    "Ties": ("Ties", ""),
+    "Socks": ("Booties", "Socks", "Not Specified"),
+    "Sports Accessories": ("Wristbands", "Not Specified"),
+    "Sports Equipment": ("Basketballs", "Footballs", "Not Specified"),
+    "Stoles": ("Stoles", "Not Specified"),
+    "Ties": ("Ties", "Not Specified"),
     "Topwear": (
         'Belts',
         'Blazers',
@@ -198,17 +208,18 @@ ARTICLETTYPE = {
         'Tshirts',
         'Tunics',
         'Waistcoat',
+        "Not Specified",
     ),
-    "Umbrellas": ("Umbrellas", ""),
-    "Vouchers":("Ipad", ""),
-    "Wallets": ("Wallets", ""), 
-    "Watches": ("Watches", ""), 
-    "Water Bottle": ("Water Bottle, "),  
-    "Wristbands": ("Wristbands", ""),
-    "NoSpecified": ("NoSpecified", ""), 
+    "Umbrellas": ("Umbrellas", "Not Specified"),
+    "Vouchers":("Ipad", "Not Specified"),
+    "Wallets": ("Wallets", "Not Specified"), 
+    "Watches": ("Watches", "Not Specified"), 
+    "Water Bottle": ("Water Bottle", "Not Specified"),  
+    "Wristbands": ("Wristbands", "Not Specified"),
+    "Not Specified": ("Not Specified", "Not Specified"), 
 }
 BASECOLOUR = (
-    'NoSpecified',
+    'Not Specified',
     'Grey Melange',
     'Navy Blue',
     'Olive',
@@ -257,10 +268,19 @@ BASECOLOUR = (
     'Yellow',
  )
 
-SEASON = ("NoSpecified", "Spring", "Summer", "Fall", "Winter")
-USAGE = ("NoSpecified", 'Formal', 'Sports', 'Travel', 'Home', 'Casual', 'Ethnic', 'Party', 'Smart Casual')
+SEASON = ("Not Specified", "Spring", "Summer", "Fall", "Winter")
+USAGE = ("Not Specified", 'Formal', 'Sports', 'Travel', 'Home', 'Casual', 'Ethnic', 'Party', 'Smart Casual')
+
+def get_image_from_url(url):
+    response = requests.get(url)
+    img = Image.open(BytesIO(response.content))
+    return img
+
 
 def main():
+    st.subheader("Instruction")
+    st.markdown("You can find the products you want by using the traditional category search.")
+
     c1, c2 = st.columns([1, 3])
 
     c1.subheader("Categories")
@@ -270,31 +290,35 @@ def main():
     articleType = c1.selectbox('Product Type:', options=ARTICLETTYPE[subCategory], key="type")
     baseColour = c1.selectbox('Product Colour:', options=BASECOLOUR, key="colour")
     season = c1.selectbox('Product Season:', options=SEASON, key="season")
-    year=c1.text_input("Product Year", value="From 2007 to 2019", key="year")
+    year=c1.text_input("Product Year", value="Not Specified", key="year")
     usage = c1.selectbox('Product Usage:', options=USAGE, key="usage")
     filter_button = c1.button("Filter")
 
     if filter_button:
         c2.subheader("Results")
-        result = images_styles.where(
-        lambda t: (
-            (t["gender"] == gender)
-            & (t["mastercategory"] == masterCategory) 
-            & (t["subcategory"] == subCategory) 
-            & (t["articletype"] == articleType) 
-            & (t["basecolour"] == baseColour) 
-            & (t["season"] == season) 
-            & (t["year"] == year) 
-            & (t["usage"] == usage) 
-        )
-        )[:20]    
-        images = []
-        captions = []
-        for row in result:
-            response = requests.get(row["link"])
-            img = Image.open(BytesIO(response.content))
-            images.append(img)
-            captions.append(row["productdisplayname"])
+        df = images_styles
+        if gender != "Not Specified":
+            df = df.where(lambda t: t["gender"] == gender)
+        if masterCategory != "Not Specified":
+            df = df.where(lambda t: t["mastercategory"] == masterCategory)
+        if subCategory != "Not Specified":
+            df = df.where(lambda t: t["subcategory"] == subCategory)
+        if articleType != "Not Specified":
+            df = df.where(lambda t: t["articletype"] == articleType)
+        if baseColour != "Not Specified":
+            df = df.where(lambda t: t["basecolour"] == baseColour)
+        if season != "Not Specified":
+            df = df.where(lambda t: t["season"] == season)
+        if year != "Not Specified":
+            df = df.where(lambda t: t["year"] == year)
+        if usage != "Not Specified":
+            df = df.where(lambda t: t["usage"] == usage)
+        
+        result = df[:50]    
+        print(len(list(result)))
+        captions = [row["productdisplayname"] for row in result]
+        pool = Pool(8) 
+        images = pool.map(get_image_from_url, [row["link"] for row in result])
         c2.image(images, width=200, caption=captions)
 
 
