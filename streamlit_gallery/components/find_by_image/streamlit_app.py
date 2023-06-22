@@ -71,8 +71,9 @@ def main():
             f"**{len(list(result_by_image))} Products Found**: ... Printing images..."
         )
         captions = [row["productdisplayname"] for row in result_by_image]
-        pool = Pool(1)
-        images = pool.map(get_image_from_url, [row["link"] for row in result_by_image])
+        # pool = Pool(1)
+        # images = pool.map(get_image_from_url, [row["link"] for row in result_by_image])
+        images = [get_image_from_url(row["link"]) for row in result_by_image]
         st.image(images, width=200, caption=captions)
         data_load_state.markdown(f"**{len(list(result_by_image))} Products Found**")
 
