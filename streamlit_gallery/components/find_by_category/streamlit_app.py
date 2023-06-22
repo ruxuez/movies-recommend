@@ -76,6 +76,7 @@ SUBCATEGORY = {
 ARTICLETTYPE = {
     "Not Specified": ("Not Specified", "Not Specified"),
     "Accessories": (
+        "Not Specified",
         "Accessory Gift Set",
         "Hair Accessory",
         "Key chain",
@@ -85,7 +86,6 @@ ARTICLETTYPE = {
         "Clothing Set",
         "Kurta Sets",
         "Swimwear",
-        "Not Specified",
     ),
     "Apparel Set": ("Clothing Set", "Kurta Sets", "Swimwear", "Not Specified"),
     "Bags": (
@@ -369,10 +369,10 @@ def main():
         "Product Main Category:", options=MASTERCATEGORY, key="mastercat"
     )
     subCategory = c1.selectbox(
-        "Product Sub-Category:", options=SUBCATEGORY[masterCategory], key="subcat"
+        "Product Sub-Category:", options=SUBCATEGORY[masterCategory], value="Not Specified", key="subcat"
     )
     articleType = c1.selectbox(
-        "Product Type:", options=ARTICLETTYPE[subCategory], key="type"
+        "Product Type:", options=ARTICLETTYPE[subCategory], value="Not Specified", key="type"
     )
     baseColour = c1.selectbox("Product Colour:", options=BASECOLOUR, key="colour")
     season = c1.selectbox("Product Season:", options=SEASON, key="season")

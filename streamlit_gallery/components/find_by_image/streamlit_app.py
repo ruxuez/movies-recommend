@@ -13,6 +13,28 @@ from PIL import Image
 import requests
 from io import BytesIO
 
+import greenplumpython as gp
+
+db = gp.database(
+    params={
+        "host": st.secrets["db_hostname"],
+        "dbname": st.secrets["db_name"],
+        "user": st.secrets["db_username"],
+        "port": st.secrets["db_port"],
+        "password": st.secrets["db_password"],
+    }
+)
+
+gp.config.print_sql = True
+
+# Get repr of Grenplum operator vector cosine distance
+cosine_distance = gp.operator("<=>")
+
+vector = gp.type_("vector", modifier=512)
+
+fashion_images = db.create_dataframe(table_name="product_embeddings", schema="fashion")
+images_styles = db.create_dataframe(table_name="image_styles", schema="fashion")
+
 # First, we load the respective CLIP model
 model = SentenceTransformer("clip-ViT-B-32")
 
