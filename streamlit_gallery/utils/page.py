@@ -12,7 +12,6 @@ def page_group(param):
 
 
 class PageGroup:
-
     def __init__(self, param):
         self._param: str = param
         self._default: str = None
@@ -35,13 +34,15 @@ class PageGroup:
         if default:
             self._default = page
 
-        selected = (page == self.selected)
+        selected = page == self.selected
 
         if selected:
             self._selected = callback
 
         st.session_state[key] = selected
-        st.checkbox(label, key=key, disabled=selected, on_change=self._on_change, args=(page,))
+        st.checkbox(
+            label, key=key, disabled=selected, on_change=self._on_change, args=(page,)
+        )
 
     def show(self) -> None:
         if self._selected is not None:
@@ -62,4 +63,8 @@ class PageGroup:
         st.experimental_set_query_params(**params)
 
     def _normalize_label(self, label: str) -> str:
-        return "".join(char.lower() for char in label if char.isascii()).strip().replace(" ", "-")
+        return (
+            "".join(char.lower() for char in label if char.isascii())
+            .strip()
+            .replace(" ", "-")
+        )
